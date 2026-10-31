@@ -1,0 +1,5 @@
+#EXTM3U
+#EXTINF:-1 tvg-name="Watania 1" group-title="Tunisie",Watania 1
+https://sw1.tanitweb.net/TunisiaTV/_definst_/watania1/playlist.m3u8
+#EXTINF:-1 tvg-name="Watania 2" group-title="Tunisie",Watania 2
+https://sw1.tanitweb.net/TunisiaTV/_definst_/watania2/playlist.m3u8
