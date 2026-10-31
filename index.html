@@ -2,118 +2,230 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="TV Tunisie">
-<meta name="theme-color" content="#000000">
-<title>TV Tunisie – Watania 1 & 2</title>
+<meta name="theme-color" content="#07070a">
+<title>TV Tunisie</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23e70013'/%3E%3Ccircle cx='32' cy='32' r='17' fill='%23fff'/%3E%3Ccircle cx='35' cy='32' r='11' fill='%23e70013'/%3E%3Ccircle cx='38' cy='32' r='9' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' fill='%23e70013'/%3E%3Ccircle cx='90' cy='90' r='48' fill='%23fff'/%3E%3Ccircle cx='98' cy='90' r='31' fill='%23e70013'/%3E%3Ccircle cx='106' cy='90' r='25' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Noto+Kufi+Arabic:wght@500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
 <style>
-  :root{--red:#e70013;--focus:#ffd34d;--bg:#000;--bar:#111;--mute:#9a9aa6}
-  *{box-sizing:border-box}
-  html,body{margin:0;height:100%;background:var(--bg);color:#fff;
-    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Arabic",sans-serif}
-  body{display:flex;flex-direction:column}
-  .stage{flex:1;position:relative;background:#000;display:flex;align-items:center;justify-content:center;min-height:0}
-  video{width:100%;height:100%;max-height:100%;background:#000}
-  .msg{position:absolute;inset:auto 0 20px 0;text-align:center;color:var(--mute);font-size:15px;padding:0 20px;pointer-events:none}
-  .bar{display:flex;gap:12px;padding:12px;background:var(--bar);justify-content:center;flex-wrap:wrap}
-  button{background:#22222a;color:#fff;border:3px solid transparent;border-radius:14px;
-    padding:12px 22px;font-size:clamp(15px,1.8vw,22px);font-weight:700;cursor:pointer;outline:none;
-    display:flex;align-items:center;gap:10px}
-  button .n{background:var(--red);border-radius:8px;padding:2px 10px}
-  button.active{background:#3a1015}
-  button:focus,button:hover{border-color:var(--focus)}
+  :root{
+    --bg:#07070a; --panel:rgba(255,255,255,.04); --line:rgba(255,255,255,.08);
+    --txt:#f5f5f7; --mute:#8b8b96; --red:#e70013; --red2:#ff3b4a; --focus:#ffd34d;
+    --r:22px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);
+    font-family:"Outfit",system-ui,-apple-system,"Segoe UI",sans-serif}
+  body{
+    min-height:100%;display:flex;flex-direction:column;
+    padding:max(14px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));
+    background:
+      radial-gradient(900px 500px at 85% -10%, rgba(231,0,19,.22), transparent 60%),
+      radial-gradient(700px 400px at -10% 110%, rgba(231,0,19,.12), transparent 60%),
+      var(--bg);
+  }
+  .ar{font-family:"Noto Kufi Arabic","Outfit",sans-serif;direction:rtl}
+
+  /* Header */
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{width:42px;height:42px;border-radius:12px;background:var(--red);display:grid;place-items:center;
+    box-shadow:0 6px 24px rgba(231,0,19,.45)}
+  .brand h1{margin:0;font-size:22px;font-weight:800;letter-spacing:.3px}
+  .brand small{display:block;color:var(--mute);font-size:12px;font-weight:400;margin-top:1px}
+  .clock{font-variant-numeric:tabular-nums;color:var(--mute);font-size:15px;
+    background:var(--panel);border:1px solid var(--line);padding:8px 14px;border-radius:999px}
+
+  /* Layout */
+  .wrap{flex:1;display:grid;gap:16px;grid-template-columns:minmax(0,1fr);align-content:start;min-height:0}
+  @media (min-width:900px){ .wrap{align-content:stretch} }
+  @media (min-width:900px){ .wrap{grid-template-columns:1fr 300px} }
+
+  /* Player */
+  .player{position:relative;border-radius:var(--r);overflow:hidden;background:#000;
+    border:1px solid var(--line);box-shadow:0 30px 80px rgba(0,0,0,.6);aspect-ratio:16/9;align-self:start;width:100%}
+  @media (min-width:900px){ .player{aspect-ratio:auto;height:100%;max-height:calc(100vh - 120px)} }
+  video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
+  .overlay{position:absolute;left:0;right:0;top:0;padding:16px 18px;display:flex;justify-content:space-between;align-items:flex-start;
+    background:linear-gradient(180deg,rgba(0,0,0,.65),transparent);pointer-events:none;transition:opacity .4s}
+  .now{display:flex;align-items:center;gap:10px}
+  .now .badge{font-size:12px;font-weight:800;letter-spacing:1px;background:var(--red);padding:4px 9px;border-radius:6px;
+    display:flex;align-items:center;gap:6px}
+  .now .badge i{width:7px;height:7px;border-radius:50%;background:#fff;animation:pulse 1.3s infinite}
+  @keyframes pulse{50%{opacity:.25}}
+  .now .title{font-weight:600;font-size:18px;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+  .player.idle .overlay{opacity:0}
+  .state{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+  .spinner{width:46px;height:46px;border-radius:50%;border:3px solid rgba(255,255,255,.15);border-top-color:var(--red2);
+    animation:spin .9s linear infinite;display:none}
+  .loading .spinner{display:block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .msg{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);background:rgba(0,0,0,.75);backdrop-filter:blur(8px);
+    padding:10px 16px;border-radius:12px;font-size:14px;color:#ddd;max-width:90%;text-align:center;display:none}
+  .msg.show{display:block}
+
+  /* Channels */
+  .side{display:flex;flex-direction:column;gap:12px;min-height:0}
+  .side h2{margin:4px 4px 0;font-size:13px;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:1.5px}
+  .list{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+  
+  .ch{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:flex;align-items:center;gap:14px;padding:14px;border-radius:18px;
+    background:var(--panel);border:2px solid var(--line);transition:transform .15s, border-color .15s, background .15s}
+  .ch:hover{background:rgba(255,255,255,.07)}
+  .ch:focus-visible,.ch:focus{border-color:var(--focus);transform:scale(1.02);outline:none}
+  .ch.active{background:linear-gradient(135deg,rgba(231,0,19,.28),rgba(231,0,19,.08));border-color:rgba(231,0,19,.7)}
+  .ch .num{flex:none;width:54px;height:54px;border-radius:14px;display:grid;place-items:center;
+    font-size:28px;font-weight:800;background:#16161c;color:#fff;border:1px solid var(--line)}
+  .ch.active .num{background:var(--red);border-color:transparent;box-shadow:0 8px 24px rgba(231,0,19,.45)}
+  .ch .meta{min-width:0}
+  .ch .name{font-weight:600;font-size:17px}
+  .ch .ar{font-size:14px;color:var(--mute);text-align:left;direction:rtl;display:block}
+  .ch .live{margin-left:auto;font-size:11px;font-weight:800;color:var(--red2);letter-spacing:1px;opacity:0}
+  .ch.active .live{opacity:1}
+
+  .tools{display:flex;gap:10px}
+  @media (min-width:900px){ .tools{margin-top:auto} }
+  .tool{all:unset;box-sizing:border-box;min-width:0;cursor:pointer;flex:1;text-align:center;padding:13px;border-radius:14px;background:var(--panel);
+    border:2px solid var(--line);font-weight:600;font-size:15px}
+  .tool:focus,.tool:focus-visible,.tool:hover{border-color:var(--focus);outline:none}
+
+  footer{margin-top:14px;text-align:center;color:#55555f;font-size:11px}
 </style>
 </head>
 <body>
-  <div class="stage">
-    <video id="v" controls playsinline autoplay></video>
-    <div class="msg" id="msg"></div>
-  </div>
-  <div class="bar">
-    <button data-ch="watania1" autofocus><span class="n">1</span> Watania 1 · الوطنية 1</button>
-    <button data-ch="watania2"><span class="n">2</span> Watania 2 · الوطنية 2</button>
-    <button id="fs">⛶ Plein écran</button>
+  <header>
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg width="26" height="26" viewBox="0 0 30 30"><circle cx="15" cy="15" r="11" fill="#fff"/><circle cx="16.6" cy="15" r="7" fill="#e70013"/><circle cx="18.4" cy="15" r="5.6" fill="#fff"/><polygon fill="#e70013" points="18.7,15 22.5,13.6 20.2,16.9 20.2,13.1 22.5,16.4"/></svg>
+      </div>
+      <h1>TV Tunisie<small>Chaînes nationales en direct</small></h1>
+    </div>
+    <div class="clock" id="clock">--:--</div>
+  </header>
+
+  <div class="wrap">
+    <div class="player" id="player">
+      <video id="v" controls playsinline autoplay></video>
+      <div class="overlay">
+        <div class="now"><span class="badge"><i></i>LIVE</span><span class="title" id="title">—</span></div>
+      </div>
+      <div class="state"><div class="spinner"></div></div>
+      <div class="msg" id="msg"></div>
+    </div>
+
+    <aside class="side">
+      <h2>Chaînes</h2>
+      <div class="list">
+        <button class="ch" data-ch="watania1" data-title="Watania 1">
+          <span class="num">1</span>
+          <span class="meta"><span class="name">Watania 1</span><span class="ar">الوطنية الأولى</span></span>
+          <span class="live">● LIVE</span>
+        </button>
+        <button class="ch" data-ch="watania2" data-title="Watania 2">
+          <span class="num">2</span>
+          <span class="meta"><span class="name">Watania 2</span><span class="ar">الوطنية الثانية</span></span>
+          <span class="live">● LIVE</span>
+        </button>
+      </div>
+      <div class="tools">
+        <button class="tool" id="fs">⛶ Plein écran</button>
+        <button class="tool" id="reload">↻ Relancer</button>
+      </div>
+    </aside>
   </div>
 
+  <footer>Usage personnel · flux de la Télévision tunisienne</footer>
+
 <script>
-  // Flux officiels de la Télévision tunisienne (serveur tanitweb).
-  // Pour chaque chaîne, plusieurs noms sont essayés dans l'ordre.
   var BASE = "https://sw1.tanitweb.net/TunisiaTV/_definst_/";
   var NAMES = ["playlist.m3u8", "playlist_DVR.m3u8"];
 
   var video = document.getElementById('v');
+  var player = document.getElementById('player');
   var msg = document.getElementById('msg');
-  var hls = null;
+  var titleEl = document.getElementById('title');
+  var hls = null, current = null;
 
-  function say(t){ msg.textContent = t || ""; }
+  function say(t){ msg.textContent = t || ""; msg.classList.toggle('show', !!t); }
+  function loading(on){ player.classList.toggle('loading', !!on); }
 
   function tryPlay(ch, i){
-    if(i >= NAMES.length){
-      say("Impossible de lire " + ch + ". Le flux est peut-être protégé ou indisponible pour le moment.");
-      return;
-    }
+    if(i >= NAMES.length){ loading(false); say("Flux indisponible pour le moment. Réessayez avec ↻ Relancer."); return; }
     var url = BASE + ch + "/" + NAMES[i];
-    say("Chargement…");
+    say(""); loading(true);
     if(hls){ hls.destroy(); hls = null; }
 
     if(window.Hls && Hls.isSupported()){
-      hls = new Hls({ lowLatencyMode:false });
+      hls = new Hls();
       hls.loadSource(url);
       hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, function(){ say(""); video.play().catch(function(){ say("Appuyez sur ▶ pour lancer la vidéo."); }); });
+      hls.on(Hls.Events.MANIFEST_PARSED, function(){
+        video.play().catch(function(){ say("Appuyez sur ▶ pour lancer la vidéo."); });
+      });
       hls.on(Hls.Events.ERROR, function(_, d){
-        if(d.fatal){
-          if(d.type === Hls.ErrorTypes.NETWORK_ERROR && d.details && d.details.indexOf("manifest") !== -1){
-            tryPlay(ch, i+1);
-          } else if(d.type === Hls.ErrorTypes.MEDIA_ERROR){
-            hls.recoverMediaError();
-          } else {
-            tryPlay(ch, i+1);
-          }
-        }
+        if(!d.fatal) return;
+        if(d.type === Hls.ErrorTypes.MEDIA_ERROR){ hls.recoverMediaError(); }
+        else { tryPlay(ch, i+1); }
       });
     } else if(video.canPlayType('application/vnd.apple.mpegurl')){
-      // iPhone / Safari : lecture HLS native
       video.src = url;
       video.onerror = function(){ tryPlay(ch, i+1); };
-      video.onloadedmetadata = function(){ say(""); };
       video.play().catch(function(){ say("Appuyez sur ▶ pour lancer la vidéo."); });
     } else {
-      say("Ce navigateur ne sait pas lire ce type de flux.");
+      loading(false); say("Ce navigateur ne sait pas lire ce flux.");
     }
   }
 
-  var buttons = Array.prototype.slice.call(document.querySelectorAll('button[data-ch]'));
-  buttons.forEach(function(b){
-    b.addEventListener('click', function(){
-      buttons.forEach(function(x){ x.classList.remove('active'); });
-      b.classList.add('active');
-      try{ localStorage.setItem('ch', b.dataset.ch); }catch(e){}
-      tryPlay(b.dataset.ch, 0);
-    });
-  });
+  video.addEventListener('playing', function(){ loading(false); say(""); });
+  video.addEventListener('waiting', function(){ loading(true); });
 
+  var chans = Array.prototype.slice.call(document.querySelectorAll('.ch'));
+  function select(b){
+    chans.forEach(function(x){ x.classList.remove('active'); });
+    b.classList.add('active');
+    current = b.dataset.ch;
+    titleEl.textContent = b.dataset.title;
+    try{ localStorage.setItem('ch', current); }catch(e){}
+    tryPlay(current, 0);
+  }
+  chans.forEach(function(b){ b.addEventListener('click', function(){ select(b); }); });
+
+  document.getElementById('reload').addEventListener('click', function(){ if(current) tryPlay(current, 0); });
   document.getElementById('fs').addEventListener('click', function(){
-    var el = video;
-    if(el.requestFullscreen) el.requestFullscreen().catch(function(){});
-    else if(el.webkitEnterFullscreen) el.webkitEnterFullscreen();
+    if(player.requestFullscreen) player.requestFullscreen().catch(function(){});
+    else if(video.webkitEnterFullscreen) video.webkitEnterFullscreen();
   });
 
-  // Télécommande : flèches gauche/droite entre les boutons
-  var all = Array.prototype.slice.call(document.querySelectorAll('.bar button'));
+  // Masquer le bandeau après inactivité
+  var idleT;
+  function wake(){ player.classList.remove('idle'); clearTimeout(idleT); idleT = setTimeout(function(){ player.classList.add('idle'); }, 3500); }
+  ['mousemove','touchstart','keydown'].forEach(function(ev){ document.addEventListener(ev, wake, {passive:true}); });
+  wake();
+
+  // Horloge
+  function tick(){ var d = new Date(); document.getElementById('clock').textContent =
+    String(d.getHours()).padStart(2,'0') + ":" + String(d.getMinutes()).padStart(2,'0'); }
+  tick(); setInterval(tick, 10000);
+
+  // Télécommande : flèches pour naviguer, chiffres 1/2 pour changer de chaîne
+  var focusables = Array.prototype.slice.call(document.querySelectorAll('.ch, .tool'));
   document.addEventListener('keydown', function(e){
-    var i = all.indexOf(document.activeElement);
-    if(e.key === 'ArrowRight'){ e.preventDefault(); all[(i+1)%all.length].focus(); }
-    if(e.key === 'ArrowLeft'){ e.preventDefault(); all[(i-1+all.length)%all.length].focus(); }
+    if(e.key === '1' || e.key === '2'){ select(chans[+e.key - 1]); chans[+e.key - 1].focus(); return; }
+    var i = focusables.indexOf(document.activeElement);
+    if(['ArrowDown','ArrowRight'].indexOf(e.key) > -1){ e.preventDefault(); focusables[(i+1)%focusables.length].focus(); }
+    if(['ArrowUp','ArrowLeft'].indexOf(e.key) > -1){ e.preventDefault(); focusables[(i-1+focusables.length)%focusables.length].focus(); }
   });
 
-  // Démarrage sur la dernière chaîne regardée
   var start = 'watania1';
   try{ start = localStorage.getItem('ch') || start; }catch(e){}
-  var btn = buttons.filter(function(b){ return b.dataset.ch === start; })[0] || buttons[0];
-  btn.focus(); btn.click();
+  var first = chans.filter(function(b){ return b.dataset.ch === start; })[0] || chans[0];
+  first.focus(); select(first);
 </script>
 </body>
 </html>
