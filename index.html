@@ -43,6 +43,9 @@
     font-variant-numeric:tabular-nums;letter-spacing:6px;display:none;text-shadow:0 4px 20px rgba(0,0,0,.6)}
   .digits.show{display:block}
   .digits.bad{color:var(--red2);font-size:28px;letter-spacing:0;padding:18px 28px}
+  .stats{position:fixed;top:4vh;left:4vw;font:14px/1.6 ui-monospace,Consolas,monospace;background:rgba(0,0,0,.8);
+    border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:12px 16px;display:none;white-space:pre;color:#cfe}
+  .stats.show{display:block}
   .clock{position:fixed;top:4vh;right:4vw;font-size:22px;font-variant-numeric:tabular-nums;color:#fff;
     background:rgba(0,0,0,.55);padding:8px 16px;border-radius:999px;transition:opacity .35s;opacity:0}
   .clock.show{opacity:1}
@@ -95,6 +98,7 @@
   <div class="msg" id="msg"></div>
   <div class="clock" id="clock">--:--</div>
   <div class="digits" id="digits"></div>
+  <div class="stats" id="stats"></div>
 
   <div class="osd" id="osd">
     <div class="num" id="osdNum">1</div>
@@ -117,6 +121,7 @@
       <b>▲ ▼</b> naviguer · zapper<br>
       <b>1 2 3…</b> aller à une chaîne<br>
       <b>Retour</b> fermer la liste<br>
+      <b>0</b> infos techniques<br>
     </div>
   </nav>
 
@@ -125,8 +130,8 @@
   // ---- Chaînes (ajouter ici de nouvelles chaînes) ----
   var BASE = "https://sw1.tanitweb.net/TunisiaTV/_definst_/";
   var CHANNELS = [
-    { id:"watania1", name:"Watania 1", ar:"الوطنية الأولى", urls:[BASE+"watania1/playlist.m3u8", BASE+"watania1/playlist_DVR.m3u8"] },
-    { id:"watania2", name:"Watania 2", ar:"الوطنية الثانية", urls:[BASE+"watania2/playlist.m3u8", BASE+"watania2/playlist_DVR.m3u8"] }
+    { id:"watania1", name:"Watania 1", ar:"الوطنية الأولى", urls:[BASE+"watania1/playlist_DVR.m3u8", BASE+"watania1/playlist.m3u8"] },
+    { id:"watania2", name:"Watania 2", ar:"الوطنية الثانية", urls:[BASE+"watania2/playlist_DVR.m3u8", BASE+"watania2/playlist.m3u8"] }
   ];
 
   var video = document.getElementById('v');
@@ -171,7 +176,9 @@
         fragLoadingMaxRetry: 8,
         manifestLoadingMaxRetry: 6,
         levelLoadingMaxRetry: 6,
-        startFragPrefetch: true
+        startFragPrefetch: true,
+        abrEwmaDefaultEstimate: 8000000,
+        capLevelToPlayerSize: false
       });
       var stalls = [];
       hls.loadSource(urls[k]);
@@ -243,7 +250,7 @@
     return null;
   }
   function typeDigit(d){
-    if(buf === "" && d === "0") return;
+    if(buf === "" && d === "0"){ toggleStats(); return; }
     buf += d;
     digitsEl.className = 'digits show'; digitsEl.textContent = buf;
     clearTimeout(bufT);
@@ -298,7 +305,7 @@
         openPanel();
       }
       else if(k === 'ArrowLeft' || k === 'ArrowRight' || k === 'ContextMenu'){ e.preventDefault(); openPanel(); }
-      else if(k === 'i' || k === 'Info'){ showOsd(); }
+      else if(k === 'i' || k === 'Info'){ toggleStats(); }
     }
   }, true);
 
@@ -323,6 +330,33 @@
   }
   document.addEventListener('mousemove', function(){ wakeCursor(true); });
   wakeCursor(false);
+
+  // ---- Infos techniques : qualité, débit, tampon, images perdues ----
+  var statsEl = document.getElementById('stats'), statsT;
+  function toggleStats(){
+    if(statsEl.classList.toggle('show')){ renderStats(); statsT = setInterval(renderStats, 1000); }
+    else clearInterval(statsT);
+  }
+  function renderStats(){
+    var lines = [];
+    lines.push("Chaîne     : " + CHANNELS[playing].name);
+    lines.push("Image      : " + (video.videoWidth||0) + " x " + (video.videoHeight||0));
+    if(hls){
+      var lv = hls.levels && hls.levels[hls.currentLevel >= 0 ? hls.currentLevel : hls.loadLevel];
+      lines.push("Qualités   : " + (hls.levels ? hls.levels.length : 0) + (hls.autoLevelEnabled ? " (auto)" : " (fixée au max)"));
+      if(lv) lines.push("Débit flux : " + (lv.bitrate/1e6).toFixed(2) + " Mbit/s");
+      if(hls.bandwidthEstimate) lines.push("Connexion  : " + (hls.bandwidthEstimate/1e6).toFixed(1) + " Mbit/s");
+      if(hls.latency) lines.push("Retard     : " + hls.latency.toFixed(1) + " s");
+    }
+    var b = video.buffered, ahead = 0;
+    for(var i = 0; i < b.length; i++){ if(b.start(i) <= video.currentTime && b.end(i) >= video.currentTime) ahead = b.end(i) - video.currentTime; }
+    lines.push("Tampon     : " + ahead.toFixed(1) + " s");
+    if(video.getVideoPlaybackQuality){
+      var q = video.getVideoPlaybackQuality();
+      lines.push("Images     : " + q.totalVideoFrames + " (perdues : " + q.droppedVideoFrames + ")");
+    }
+    statsEl.textContent = lines.join("\n");
+  }
 
   // Horloge
   function tick(){ var d = new Date(); clock.textContent = String(d.getHours()).padStart(2,'0') + ":" + String(d.getMinutes()).padStart(2,'0'); }
